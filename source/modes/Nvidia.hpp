@@ -52,7 +52,7 @@ class NvidiaOverlay : public tsl::Gui {
                 if (panel() && RAM_Hz) add(tr("Memory clock", "Частота памяти"), tr("%u MHz", "%u МГц"), unsigned((realRAM_Hz ? realRAM_Hz : RAM_Hz) / 1000000));
             }
             if (extended && enabled(5) && R_SUCCEEDED(pwmCheck) && Rotation_Duty > 0)
-                add(tr("Fan", "Вентилятор"), "%.0f%%", double(Rotation_Duty));
+                add(tr("Fan", "Вент."), "%.0f%%", double(Rotation_Duty));
             if (extended && enabled(7) && validFPS)
                 add(tr("Mean frame interval", "Средний интервал кадра"), tr("%.1f ms", "%.1f мс"), 1000.0 / fps);
         }

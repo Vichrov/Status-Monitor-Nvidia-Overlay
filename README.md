@@ -1,79 +1,52 @@
-# NVIDIA Style Monitor for Nintendo Switch
+# NVIDIA Style Monitor — Nintendo Switch
 
-A Status Monitor fork with four NVIDIA-style HUD presets, RU/EN settings,
-optional regular/bold fonts, and platform-accurate Switch metrics.
+Оверлей производительности в стиле NVIDIA на базе Status Monitor.
+Четыре режима, русский и английский интерфейс, настройки позиции, размера,
+прозрачности и отображаемых показателей. Ориентирован на Switch / Switch Lite
+с Ultrahand или Tesla; для FPS нужен SaltyNX.
 
-**[Installation, modes, limitations and testing](docs/nvidia.md)**
+**[Скачать релиз](https://github.com/Vichrov/Status-Monitor-Nvidia-Overlay/releases/latest)** ·
+**[Установка и настройки](docs/nvidia.md)** · **[История изменений](CHANGELOG.md)**
 
-Version 0.1.0 is cross-built and host-layout-tested; hardware validation on
-Switch Lite / Ultrahand is still required. Bundled Liberation Sans is an
-approximation, not a claim of pixel-identical NVIDIA typography.
+## Режимы
 
-The original Status Monitor documentation follows for legacy modes.
+- **Только FPS** — счётчик кадров.
+- **Краткая строка** — FPS, загрузка GPU и CPU.
+- **Подробная строка** — частоты, SoC, RAM, Вент./Fan, интервал кадра и поток мощности АКБ.
+- **Панель производительности** — вертикальная полупрозрачная панель с зелёными значениями.
 
----
+Reflex, задержка контроллера и другие отсутствующие на Switch показатели
+не отображаются. FT — средний интервал кадра, а не задержка ввода.
 
-# Status Monitor Overlay
-## Project discontinued, superseeded by https://github.com/masagrator/Status-Monitor-Deux
+## Установка и обновление
 
-Monitor Your hardware in real time!
+Для первой установки распакуйте ZIP из Releases в корень SD.
+Для обновления замените только `switch/.overlays/Status-Monitor-Nvidia-Overlay.ovl`:
+так сохранятся настройки и уже установленные оригинальные шрифты.
+Полностью закройте и заново откройте оверлей.
 
-This is an overlay homebrew dedicated to Nintendo Switch.
-You need to have installed Tesla environment to use it.
+Публичный полный архив содержит свободные Liberation Sans Regular/Bold.
+Собственные NVIDIA Sans можно использовать без пересборки: скопируйте их как
+`config/status-monitor/fonts/regular.ttf` и `bold.ttf`.
 
-Tool contains five menus to choose, each one is explained [here](/docs/modes.md).<br>
-Overlay supports customizations through config file, more [here](/docs/config.md).
+## Проверки
 
-If it's not working in dock, you need to first start Status Monitor, then put Nintendo Switch to dock.
+Версия **0.1.1**: короткая подпись **Вент. / Fan**, обновлённое описание и
+автоматическая публикация релиза после успешной сборки и проверки размещения.
+Проверяются 448 вариантов компоновки RU/EN. Тесты на компьютере не заменяют
+проверку на консоли; совместимость с конкретной прошивкой требует тестирования.
 
-# What is currently supported:
-- CPU Usage for each core (Cores `#0`-`#2` are used by apps/games, Core `#3` is used by OS, background processes and also Tesla overlays)
-- GPU Load
-- CPU, GPU & RAM target frequencies (also real frequencies + RAM Load if [sys-clk 2.0.0_rc4+](https://github.com/retronx-team/sys-clk/releases) or [Horizon OC 2.2.0+](https://github.com/Horizon-OC/Horizon-OC/releases) is installed, use only official RetroNX release for reliable results)
-- Used RAM categorized to: (not supported by FWs <5.0.0)
-  - Total
-  - Application
-  - Applet
-  - System
-  - System Unsafe
-- SoC, PCB & Skin temperatures (Skin temperature not supported by FWs <5.0.0)
-- Fan Rotation Level
-- PFPS, FPS, resolutions, game read speed (shows only if [my fork of SaltyNX](https://github.com/masagrator/SaltyNX/releases) is installed)
-- Battery temperature, raw charge, age, average voltage, average current flow and average power flow
-- Charger type, max voltage, and max current
-- DSP usage (only for FW older than 17.0.0)
-- NVDEC, NVENC and NVJPG clock rates
-- Network type + Wi-fi password
+## English
 
-# Requirements:
-- Tesla Menu at least version 1.2.3
+Unofficial NVIDIA-style performance HUD for Nintendo Switch, based on Status
+Monitor. Four presets, RU/EN, configurable metrics, positions, size and opacity.
+SaltyNX supplies FPS. Unsupported PC-only latency metrics are omitted.
+Download the standalone `.ovl` to upgrade without replacing your custom fonts.
+See the [full guide](docs/nvidia.md) for metric definitions and limitations.
 
-How to setup everything: [HERE](https://gist.github.com/masagrator/65fcbd5ad09243399268d145aaab899b)
+## Основа / Credits
 
----
-
-# Thanks to:
-- RetroNX channel for helping with coding stuff
-- SunTheCourier for sys-clk-Overlay from which I learned how to make my own Tesla homebrew
-- Herbaciarz for providing screenshots from HDMI Grabber
-- KazushiMe for writing code to read registers from max17050 chip
-- CTCaer for Hekate from which I took max17050.h and calculation formulas for reading battery stats from max17050 chip
-- ChanseyIsTheBest for testing Game Resolutions menu
-
-# FAQ:
-Q: This homebrew has any impact on games?
-
-A: Negligible, you won't see any difference. Almost everything is done on Core `#3`, other cores usage is below 0.005% at 1 FPS refresh rate.
-
-# Troubleshooting:
-
-Q: When opening Full or Mini mode, overlay is showing that Core #3 usage is at 100% while everything else is showing 0, eventually leading to crash. Why this happens?
-
-A: There are few possible explanations: 
-1. You're using nifm services connection test patches (in short `nifm ctest patches`) that are included in various packs. Those patches allow to connect to network that has no internet connection. But they cause nifm to randomly rampage when connected to network. Find any folder in `atmosphere/exefs_patches` that has in folder name `nifm`, `nfim` and/or `ctest`, delete this folder and restart Switch (if you are using `sys-patch`, turn off `nifm` patching). If you must use it, only solution is to use this overlay only in airplane mode.
-2. You're using some untested custom sysmodule that has no proper thread sleeping implemented. Find out in atmosphere/contents any sysmodule that you don't need, delete it and restart Switch.
-3. Your Switch is using sigpatches, is not a primary device, is using linked account, and is connected to network. Delete sigpatches, change your Switch to primary device, unlink account, or disable Wi-Fi. 
-
-Q: When opening Status Monitor overlays stop responding, or something that I am trying to open while Status Monitor is opened is freezing (f.e. Album or HB Menu). How to fix this?
-
-A: This is related to SaltyNX, issue comes from too much sysmodules accessing sdcard at once. You must either update SaltyNX to at least 1.8.1 or limit amount of sysmodules that have such access (you can free one session by disabling logs in SaltyNX-Tool).
+Based on masagrator's Status Monitor 1.4.1 and its bundled libtesla fork.
+GPL-2.0 project; bundled Liberation fonts use SIL OFL.
+[Original upstream documentation and acknowledgments](docs/upstream.md).
+Not affiliated with NVIDIA or Nintendo.

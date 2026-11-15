@@ -1,4 +1,4 @@
-# NVIDIA Style Monitor 0.1.0 — Nintendo Switch
+# NVIDIA Style Monitor 0.1.1 — Nintendo Switch
 
 Unofficial NVIDIA-style performance HUD based on Status Monitor 1.4.1.
 Target device: Switch Lite, firmware 22.1.0 / Ultra 3.0, Ultrahand, SaltyNX.

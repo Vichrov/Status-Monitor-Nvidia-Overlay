@@ -52,7 +52,7 @@ public:
             save(rate, std::to_string(settings.refresh)); return true;
         }); list->addItem(rate);
         static const char* en[] = {"FPS", "GPU", "CPU", "Temperatures", "RAM", "Fan", "Battery power flow", "Mean frame interval"};
-        static const char* ru[] = {"FPS", "GPU", "CPU", "Температуры", "RAM", "Вентилятор", "Поток мощности АКБ", "Средний интервал кадра"};
+        static const char* ru[] = {"FPS", "GPU", "CPU", "Температуры", "RAM", "Вент.", "Поток мощности АКБ", "Средний интервал кадра"};
         for (unsigned i = 0; i < 8; ++i) {
             auto item = new tsl::elm::ListItem(settings.russian ? ru[i] : en[i]);
             const auto value = [i]() { return (settings.groups & (1u << i)) ? tr("On", "Вкл.") : tr("Off", "Выкл."); };

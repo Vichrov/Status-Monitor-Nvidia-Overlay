@@ -29,3 +29,58 @@ jobs:
           name: NVIDIA-Style-Monitor-Switch
           path: dist/
           include-hidden-files: true
+  release:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master' && startsWith(github.event.head_commit.message, 'Release v')
+    needs: [layout, build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: NVIDIA-Style-Monitor-Switch
+          path: dist
+      - name: Package release
+        run: |
+          mkdir -p release
+          cp LICENSE dist/LICENSE-Status-Monitor.txt
+          cp dist/switch/.overlays/Status-Monitor-Nvidia-Overlay.ovl release/
+          version=$(awk '$1 == "APP_VERSION" {print $3}' Makefile)
+          cd dist
+          zip -r "../release/NVIDIA_Style_Monitor_v${version}_Switch.zip" .
+          cd ../release
+          sha256sum *.ovl *.zip > SHA256SUMS.txt
+      - name: Publish verified binaries
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            const version = fs.readFileSync('Makefile', 'utf8').match(/^APP_VERSION\s*:=\s*(\d+\.\d+\.\d+)$/m)[1];
+            const tag = `v${version}`;
+            const body = fs.readFileSync('docs/release-notes.md', 'utf8');
+            let release;
+            try {
+              release = (await github.rest.repos.getReleaseByTag({...context.repo, tag})).data;
+            } catch (error) {
+              if (error.status !== 404) throw error;
+              release = (await github.rest.repos.createRelease({
+                ...context.repo, tag_name: tag, target_commitish: context.sha,
+                name: `NVIDIA Style Monitor ${tag} — Вент. / Fan`, body, draft: true
+              })).data;
+            }
+            const existing = (await github.rest.repos.listReleaseAssets({
+              ...context.repo, release_id: release.id
+            })).data;
+            for (const name of fs.readdirSync('release')) {
+              const old = existing.find(asset => asset.name === name);
+              if (old) await github.rest.repos.deleteReleaseAsset({...context.repo, asset_id: old.id});
+              await github.rest.repos.uploadReleaseAsset({
+                ...context.repo, release_id: release.id, name,
+                data: fs.readFileSync(path.join('release', name))
+              });
+            }
+            await github.rest.repos.updateRelease({
+              ...context.repo, release_id: release.id, body, draft: false, make_latest: 'true'
+            });
