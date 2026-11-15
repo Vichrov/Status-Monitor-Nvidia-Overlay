@@ -1,4 +1,4 @@
-# NVIDIA Style Monitor 0.1.1 — Nintendo Switch
+# NVIDIA Style Monitor 0.1.2 — Nintendo Switch
 
 Unofficial NVIDIA-style performance HUD based on Status Monitor 1.4.1.
 Target device: Switch Lite, firmware 22.1.0 / Ultra 3.0, Ultrahand, SaltyNX.
@@ -97,3 +97,28 @@ On-device validation still needed: launching/exiting each preset while a game
 runs; game pause/switch/close; sleep/wake; settings persistence; CPU load; battery
 charge/discharge; font appearance and readable sizes on the 5.5-inch Lite screen.
 If all telemetry except FPS works, check SaltyNX version and game compatibility.
+
+## Исправление сохранения в 0.1.2
+
+Ошибка 0.1.1 возникала при переименовании временного файла поверх уже
+существующего nvidia.ini. На Switch такая замена не выполняется. Меню при этом
+раньше показывало новое значение из памяти, а после перезапуска HUD считывал
+старое значение с SD.
+
+Теперь сохранение использует nvidia.ini.tmp и nvidia.ini.bak без переименования
+поверх существующего назначения. При неудаче выполняется откат; если основной
+файл отсутствует, при загрузке читается резервный. Меню принимает изменение
+только после успешной записи. При ошибке рядом выводится errno.
+
+Для обновления замените только .ovl и перезапустите оверлей. Не удаляйте
+nvidia.ini или шрифты. После обновления задайте нужную частоту заново:
+несохранённые изменения предыдущей версии восстановить невозможно.
+
+Регрессия сохранения:
+```sh
+g++ -std=c++17 -O2 -Wall -Wextra -Werror tests/nvidia_config.cpp -o /tmp/nvidia-config-test
+/tmp/nvidia-config-test
+```
+Тест использует переименование с отказом при существующем назначении,
+40 последовательных изменений всех параметров с загрузкой заново,
+цикл частоты начиная с 10, ошибки записи и переименования, откат и чтение .bak.

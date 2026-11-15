@@ -38,7 +38,7 @@ include $(DEVKITPRO)/libnx/switch_rules
 #   NACP building is skipped as well.
 #---------------------------------------------------------------------------------
 APP_TITLE	:=	NVIDIA Style Monitor
-APP_VERSION	:=	0.1.1
+APP_VERSION	:=	0.1.2
 TARGET		:=	Status-Monitor-Nvidia-Overlay
 BUILD		:=	build
 SOURCES		:=	source
