@@ -121,6 +121,7 @@ uint16_t framebufferWidth = 448;
 uint16_t framebufferHeight = 720;
 bool deactivateOriginalFooter = false;
 bool fontCache = true;
+bool nvidiaStyleFonts = false;
 
 using namespace std::literals::chrono_literals;
 
@@ -761,7 +762,7 @@ namespace tsl {
 			 * @param color Text color. Use transparent color to skip drawing and only get the string's dimensions
 			 * @return Dimensions of drawn string
 			 */
-			std::pair<u32, u32> drawString(const char* string, bool monospace, u32 x, u32 y, float fontSize, Color color) {
+			std::pair<u32, u32> drawString(const char* string, bool monospace, u32 x, u32 y, float fontSize, Color color, bool bold = false) {
 				const size_t stringLength = strlen(string);
 
 				u32 maxX = x;
@@ -787,6 +788,10 @@ namespace tsl {
 					else
 						currFont = &this->m_stdFont;
 
+                    if (nvidiaStyleFonts) {
+                        if (bold && !m_nvBoldData.empty() && stbtt_FindGlyphIndex(&m_nvBold, currCharacter)) currFont = &m_nvBold;
+                        else if (!m_nvRegularData.empty() && stbtt_FindGlyphIndex(&m_nvRegular, currCharacter)) currFont = &m_nvRegular;
+                    }
 					float currFontSize = stbtt_ScaleForPixelHeight(currFont, fontSize);
 					currX += currFontSize * stbtt_GetCodepointKernAdvance(currFont, prevCharacter, currCharacter);
 
@@ -808,6 +813,9 @@ namespace tsl {
 
 				   if (!std::iswspace(currCharacter) && fontSize > 0 && color.a != 0x0)
 						this->drawGlyph(currCharacter, currX + bounds[0], currY + bounds[1], color, currFont, currFontSize);
+                    // Fallback weight until a real bold font is supplied.
+                    if (bold && m_nvBoldData.empty() && color.a != 0 && !std::iswspace(currCharacter))
+                        this->drawGlyph(currCharacter, currX + bounds[0] + 1, currY + bounds[1], color, currFont, currFontSize);
 
 					currX += xAdvance * currFontSize;
 					
@@ -855,7 +863,33 @@ namespace tsl {
 			bool m_scissoring = false;
 			u16 m_scissorBounds[4];
 
-			stbtt_fontinfo m_stdFont, m_extFont;
+			stbtt_fontinfo m_stdFont, m_extFont, m_nvRegular{}, m_nvBold{};
+            std::vector<u8> m_nvRegularData, m_nvBoldData;
+            void loadOverlayFont(const char* path, std::vector<u8>& data, stbtt_fontinfo& info) {
+                FILE* f = fopen(path, "rb");
+                if (!f) return;
+                fseek(f, 0, SEEK_END);
+                long length = ftell(f);
+                rewind(f);
+                if (length < 12 || length > 1024 * 1024) { fclose(f); return; }
+                data.resize(length);
+                bool ok = fread(data.data(), 1, data.size(), f) == data.size();
+                fclose(f);
+                // Accept a single sfnt font; WOFF must be converted outside the console.
+                if (ok) {
+                    const u8* d = data.data();
+                    ok = (d[0] == 0 && d[1] == 1 && d[2] == 0 && d[3] == 0) || !memcmp(d, "OTTO", 4);
+                    const unsigned count = (unsigned(d[4]) << 8) | d[5];
+                    ok = ok && 12 + count * 16 <= data.size();
+                    for (unsigned i = 0; ok && i < count; ++i) {
+                        const u8* table = d + 12 + 16 * i;
+                        const auto u32be = [](const u8* p) { return (u32(p[0]) << 24) | (u32(p[1]) << 16) | (u32(p[2]) << 8) | p[3]; };
+                        const uint64_t end = uint64_t(u32be(table + 8)) + u32be(table + 12);
+                        ok = end <= data.size();
+                    }
+                }
+                if (!ok || !stbtt_InitFont(&info, data.data(), 0)) data.clear();
+            }
 
 			static inline float s_opacity = 1.0F;
 
@@ -1037,6 +1071,10 @@ namespace tsl {
 				fontBuffer = reinterpret_cast<u8*>(extFontData.address);
 				stbtt_InitFont(&this->m_extFont, fontBuffer, stbtt_GetFontOffsetForIndex(fontBuffer, 0));
 
+                if (nvidiaStyleFonts) {
+                    loadOverlayFont("sdmc:/config/status-monitor/fonts/regular.ttf", m_nvRegularData, m_nvRegular);
+                    loadOverlayFont("sdmc:/config/status-monitor/fonts/bold.ttf", m_nvBoldData, m_nvBold);
+                }
 				return res;
 			}
 			
@@ -1091,7 +1129,9 @@ namespace tsl {
 				u8* glyphBmp = nullptr;
 
 				if (fontCache) {
-					auto pair = std::make_pair(codepoint, fontSize);
+					// Font identity is part of the cache key: regular and bold may share size.
+                    const int face = font == &m_nvBold ? 3 : font == &m_nvRegular ? 2 : font == &m_extFont ? 1 : 0;
+                    auto pair = std::make_pair(codepoint + face * 0x110000, fontSize);
 					auto found = cache.find(pair);
 					if (found != cache.end()) {
 						glyphBmp = found -> second.pointer;
@@ -2411,10 +2451,14 @@ namespace tsl {
 						shData->touchState = { 0 };
 
 					if (((shData->keysHeld & shData->launchCombo) == shData->launchCombo) && shData->keysDown & shData->launchCombo) {
-						if (shData->overlayOpen) {
-							tsl::Overlay::get()->hide();
-							shData->overlayOpen = false;
-						}
+                        if (shData->overlayOpen) {
+                            // HUD handles its hold-to-exit chord itself. Do not hide it
+                            // on key-down before the hold timer can complete.
+                            if (!nvidiaStyleFonts) {
+                                tsl::Overlay::get()->hide();
+                                shData->overlayOpen = false;
+                            }
+                        }
 						else
 							eventFire(&shData->comboEvent);
 					}

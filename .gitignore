@@ -8,3 +8,6 @@ build/
 *.nacp
 
 *.nro
+
+out/
+dist/

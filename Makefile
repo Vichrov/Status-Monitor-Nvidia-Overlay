@@ -37,9 +37,9 @@ include $(DEVKITPRO)/libnx/switch_rules
 #   of a homebrew executable (.nro). This is intended to be used for sysmodules.
 #   NACP building is skipped as well.
 #---------------------------------------------------------------------------------
-APP_TITLE	:=	Status Monitor
-APP_VERSION	:=	1.4.1
-TARGET		:=	$(notdir $(CURDIR))
+APP_TITLE	:=	NVIDIA Style Monitor
+APP_VERSION	:=	0.1.0
+TARGET		:=	Status-Monitor-Nvidia-Overlay
 BUILD		:=	build
 SOURCES		:=	source
 INCLUDES	:=	include lib/Atmosphere-libs/libstratosphere/source/dmnt lib/Atmosphere-libs/libstratosphere/source lib/libtesla/include

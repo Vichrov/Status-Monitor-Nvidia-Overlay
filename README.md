@@ -1,3 +1,18 @@
+# NVIDIA Style Monitor for Nintendo Switch
+
+A Status Monitor fork with four NVIDIA-style HUD presets, RU/EN settings,
+optional regular/bold fonts, and platform-accurate Switch metrics.
+
+**[Installation, modes, limitations and testing](docs/nvidia.md)**
+
+Version 0.1.0 is cross-built and host-layout-tested; hardware validation on
+Switch Lite / Ultrahand is still required. Bundled Liberation Sans is an
+approximation, not a claim of pixel-identical NVIDIA typography.
+
+The original Status Monitor documentation follows for legacy modes.
+
+---
+
 # Status Monitor Overlay
 ## Project discontinued, superseeded by https://github.com/masagrator/Status-Monitor-Deux
 

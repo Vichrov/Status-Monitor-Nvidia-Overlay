@@ -14,6 +14,8 @@ static bool skipMain = false;
 #include "modes/Battery.hpp"
 #include "modes/Misc.hpp"
 #include "modes/Resolutions.hpp"
+#include "modes/Nvidia.hpp"
+#include "NvidiaMenu.hpp"
 
 //Graphs
 class GraphsMenu : public tsl::Gui {
@@ -131,9 +133,15 @@ public:
     MainMenu() {}
 
     virtual tsl::elm::Element* createUI() override {
-		rootFrame = new tsl::elm::OverlayFrame("Status Monitor", APP_VERSION);
+		rootFrame = new tsl::elm::OverlayFrame("NVIDIA Style Monitor", APP_VERSION);
 		auto list = new tsl::elm::List();
 		
+        auto nvidia = new tsl::elm::ListItem("NVIDIA / NVIDIA-стиль");
+        nvidia->setClickListener([](uint64_t keys) {
+            if (!(keys & KEY_A)) return false;
+            tsl::changeTo<NvidiaMenu>(); return true;
+        });
+        list->addItem(nvidia);
 		auto Full = new tsl::elm::ListItem("Full");
 		Full->setClickListener([](uint64_t keys) {
 			if (keys & KEY_A) {
@@ -265,7 +273,7 @@ public:
 				else hocclkCheck = 0;
 			}
 		});
-		Hinted = envIsSyscallHinted(0x6F);
+		Hinted = envIsSyscallHinted(0x6F) ? 0 : MAKERESULT(Module_Libnx, LibnxError_NotFound);
     	hidGetSixAxisSensorHandles(&sixaxisHandles[Controller_ProController], 1, HidNpadIdType_No1,      HidNpadStyleTag_NpadFullKey);
     	hidGetSixAxisSensorHandles(&sixaxisHandles[Controller_JoyConL], 2, HidNpadIdType_No1,      HidNpadStyleTag_NpadJoyDual);
 	}
@@ -345,7 +353,7 @@ public:
 				else hocclkCheck = 0;
 			}
 		});
-		Hinted = envIsSyscallHinted(0x6F);
+		Hinted = envIsSyscallHinted(0x6F) ? 0 : MAKERESULT(Module_Libnx, LibnxError_NotFound);
     	hidGetSixAxisSensorHandles(&sixaxisHandles[0], 1, HidNpadIdType_No1,      HidNpadStyleTag_NpadFullKey);
     	hidGetSixAxisSensorHandles(&sixaxisHandles[1], 2, HidNpadIdType_No1,      HidNpadStyleTag_NpadJoyDual);
 	}
@@ -383,6 +391,12 @@ public:
 
 
 
+class NvidiaMode : public MonitorOverlay {
+public:
+    void onShow() override { tsl::hlp::requestForeground(false); }
+    std::unique_ptr<tsl::Gui> loadInitialGui() override { return initially<NvidiaOverlay>(); }
+};
+
 // This function gets called on startup to create a new Overlay object
 int main(int argc, char **argv) {
 	#if !defined(__SWITCH__) && !defined(__OUNCE__)
@@ -390,11 +404,19 @@ int main(int argc, char **argv) {
 	#endif
 
 	ParseIniFile(); // parse INI from file
+    nvstyle::settings.load();
     
 	if (argc > 0) {
 		filename = argv[0];
 	}
-	for (u8 arg = 0; arg < argc; arg++) {
+	for (int arg = 0; arg < argc; arg++) {
+        if (!strncmp(argv[arg], "--nvidia=", 9)) {
+            nvstyle::launchMode = std::clamp(atoi(argv[arg] + 9), 0, 3);
+            nvidiaStyleFonts = true;
+            framebufferWidth = nvstyle::launchMode == 3 ? 448 : 1280;
+            framebufferHeight = nvstyle::launchMode == 3 ? 720 : 80;
+            return tsl::loop<NvidiaMode>(argc, argv);
+        }
 		if (strcasecmp(argv[arg], "--microOverlay_") == 0) {
 			framebufferWidth = 1280;
 			framebufferHeight = 28;
